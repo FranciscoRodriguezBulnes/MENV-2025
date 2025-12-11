@@ -1,5 +1,6 @@
 import { User } from "../models/User.js";
 import jwt from "jsonwebtoken";
+import { generateRefreshToken, generateTokens } from "../utils/tokenManager.js";
 
 export const register = async (req, res) => {
   console.log(req.body);
@@ -56,23 +57,71 @@ export const login = async (req, res) => {
     }
 
     //Generar el JWT - JSON WEB TOKEN
-    const token = jwt.sign(
-      {
-        user: { uid: user._id },
-      },
-      process.env.JWT_SECRET,
-      // { expiresIn: "1h" }
-    );
+    const { token, expiresIn } = generateTokens(user._id);
+    // Guardar access token como cookie
 
-    // const payload = {
-    //   user: {
-    //     uid: user._id,
-    //   },
-    // };
 
-    return res.json({token});
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: !(process.env.MODO === "developer"),
+      sameSite: "strict",
+      expires: new Date(Date.now() + expiresIn * 1000),
+    });
+
+    generateRefreshToken(user._id, res);
+
+    return res.json({ token, expiresIn });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ errors: [{ msg: "Error del servidor" }] });
   }
+};
+
+export const infoUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.uid).lean(); //la función lean() devuelve un objeto plano sin métodos de mongoose
+    return res.json({ uid: user._id, email: user.email });
+  } catch (error) {
+    return res.status(500).json({ errors: [{ msg: "Error del servidor" }] });
+  }
+};
+
+export const refreshToken = (req, res) => {
+  try {
+    const refreshTokenCookie = req.cookies.refreshToken;
+    if (!refreshTokenCookie ) throw new Error("No hay token");
+
+    const { uid } = jwt.verify(refreshTokenCookie , process.env.JWT_REFRESH);
+
+        //Generar el JWT - JSON WEB TOKEN
+    const { token, expiresIn } = generateTokens(uid);
+    return res.json({ token, expiresIn });  
+    // Guardar access token como cookie
+    // res.cookie("token", token, {
+    //   httpOnly: true,
+    //   secure: !(process.env.MODO === "developer"),
+    //   sameSite: "strict",
+    //   expires: new Date(Date.now() + expiresIn * 1000),
+    // });
+
+  } catch (error) {
+    console.log(error);
+    const TokenVericationErrors = {
+      "invalid signature": "La firma del JWT no es válida",
+      "jwt expired": "El JWT ha expirado",
+      "jwt malformed": "El JWT es incorrecto",
+      "A saber qué error es este": "A saber qué error es este",
+    };
+    if (TokenVericationErrors[error.message]) {
+      return res
+        .status(401)
+        .json({ errors: [{ msg: TokenVericationErrors[error.message] }] });
+    }
+  }
+};
+
+export const logout = (req, res) => {
+  res.clearCookie("token");
+  res.clearCookie("refreshToken");
+  return res.json({ ok: true });
 };

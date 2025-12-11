@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ruta protegida</title>
+</head>
+<body>
+  <h1>Ruta Protegida</h1>
+  <div id="app">
+    <h2>Email:</h2>
+
+    <button id="logout">
+      <!-- <a href="/api/v1/auth/logout">Cerrar sesión</a> -->
+       Cerrar sesión
+    </button>
+
+  </div>
+
+<script>
+
+const logoutBtn = document.getElementById("logout");
+logoutBtn.addEventListener("click", async () => {
+  try {
+    const resp = await fetch("/api/v1/auth/logout", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",  // Incluir cookies si las hay
+    });
+    console.log(resp.ok, resp.status)
+    if (resp.ok) {
+      window.location.href = "/"; // Redirigir al usuario a la página de inicio de sesión u otra página
+    }
+  } catch (error) {
+    console.log(error)
+  }
+});
+
+
+
+
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+
+    const resToken=await fetch("/api/v1/auth/refresh", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",  // Incluir cookies si las hay
+    }); 
+
+    const {token}=await resToken.json();
+    console.log("Token renovado: ", token);
+
+    const resp = await fetch("/api/v1/auth/protected", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`  
+      },
+      // credentials: "include",  // Incluir cookies si las hay
+    });
+    console.log(resp.ok, resp.status)
+    const data = await resp.json();
+    console.log(data);
+    document.getElementById("app").innerHTML += `<p>${data.email}</p>`
+
+  } catch (error) {
+    console.log(error)
+  }
+});     
+
+</script>
+
+</body>
+</html>
