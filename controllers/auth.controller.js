@@ -60,13 +60,13 @@ export const login = async (req, res) => {
     const { token, expiresIn } = generateTokens(user._id);
     // Guardar access token como cookie
 
-
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: !(process.env.MODO === "developer"),
-      sameSite: "strict",
-      expires: new Date(Date.now() + expiresIn * 1000),
-    });
+    // Puedo eliminarlo lo que sigue porque quiero tener el token en memoria del cliente
+    // res.cookie("token", token, {
+    //   httpOnly: true,
+    //   secure: !(process.env.MODO === "developer"),
+    //   sameSite: "strict",
+    //   expires: new Date(Date.now() + expiresIn * 1000),
+    // });
 
     generateRefreshToken(user._id, res);
 
@@ -88,35 +88,12 @@ export const infoUser = async (req, res) => {
 
 export const refreshToken = (req, res) => {
   try {
-    const refreshTokenCookie = req.cookies.refreshToken;
-    if (!refreshTokenCookie ) throw new Error("No hay token");
-
-    const { uid } = jwt.verify(refreshTokenCookie , process.env.JWT_REFRESH);
-
-        //Generar el JWT - JSON WEB TOKEN
-    const { token, expiresIn } = generateTokens(uid);
-    return res.json({ token, expiresIn });  
-    // Guardar access token como cookie
-    // res.cookie("token", token, {
-    //   httpOnly: true,
-    //   secure: !(process.env.MODO === "developer"),
-    //   sameSite: "strict",
-    //   expires: new Date(Date.now() + expiresIn * 1000),
-    // });
-
+    //Generar el JWT - JSON WEB TOKEN
+    const { token, expiresIn } = generateTokens(req.uid);
+    return res.json({ token, expiresIn });
   } catch (error) {
     console.log(error);
-    const TokenVericationErrors = {
-      "invalid signature": "La firma del JWT no es válida",
-      "jwt expired": "El JWT ha expirado",
-      "jwt malformed": "El JWT es incorrecto",
-      "A saber qué error es este": "A saber qué error es este",
-    };
-    if (TokenVericationErrors[error.message]) {
-      return res
-        .status(401)
-        .json({ errors: [{ msg: TokenVericationErrors[error.message] }] });
-    }
+    return res.status(500).json({ errors: [{ msg: "Error del servidor" }] });
   }
 };
 

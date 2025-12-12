@@ -20,17 +20,28 @@ export const generateRefreshToken = (uid, res) => {
       expiresIn: expiresIn,
     });
 
-   res.cookie("refreshToken", refreshToken, {
-     httpOnly: true,
-     secure: !(process.env.MODO === "developer"),
-     sameSite: "strict",
-     expires: new Date(Date.now() + expiresIn * 1000),
-    //  maxAge: expiresIn * 1000,
-   });  
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: !(process.env.MODO === "developer"),
+      sameSite: "strict",
+      expires: new Date(Date.now() + expiresIn * 1000),
+      //  maxAge: expiresIn * 1000,
+    });
     return refreshToken;
   } catch (error) {
     console.log(error);
   }
 };
 
-// const refreshToken = jwt.sign({ user: { uid: user._id } });
+export const tokenVericationErrors = {
+  "invalid signature": "La firma del JWT no es válida",
+  "jwt expired": "El JWT ha expirado",
+  "jwt malformed": "El JWT es incorrecto",
+  "No Bearer": "Utiliza el formato Bearer",
+  "A saber qué error es este": "A saber qué error es este",
+};
+// if (tokenVericationErrors[error.message]) {
+//   return res
+//     .status(401)
+//     .json({ errors: [{ msg: tokenVericationErrors[error.message] }] });
+// }
