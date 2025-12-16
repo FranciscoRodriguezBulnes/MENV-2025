@@ -1,5 +1,6 @@
 import { validationResult } from "express-validator";
 import { body } from "express-validator";
+import axios from "axios";
 
 export const validationResultExpress = (req, res, next) => {
   const errors = validationResult(req);
@@ -36,3 +37,33 @@ export const bodyLoginValidator = [
   body("password", "Mínimo 6 caracteres").trim().isLength({ min: 6 }),
   validationResultExpress,
 ];
+
+export const bodyLinkValidator = [
+  body("longLink", "Formato de URL incorecto")
+    .trim()
+    .notEmpty()
+    .exists()
+    .isURL()
+    .custom(async (value) => {
+      try {
+        if (!value.startsWith("http://") && !value.startsWith("https://")) {
+          value = "http://" + value;
+        }
+        console.log(value);
+
+        await axios.get(value); // intenta acceder a la URL
+        return true;
+      } catch (err) {
+        throw new Error("La URL no responde o no es válida 404");
+      }
+    }),
+  validationResultExpress,
+];
+
+// export const paramLinkValidator = [
+//   param("id", "Formato incorrecto (expressValidator)")
+//     .trim()
+//     .notEmpty()
+//     .escape(),
+//   validationResultExpress,
+// ];

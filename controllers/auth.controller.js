@@ -20,9 +20,11 @@ export const register = async (req, res) => {
     await user.save();
 
     //JWT - JSON WEB TOKEN
+    const { token, expiresIn } = generateTokens(user._id);
+    generateRefreshToken(user._id, res);
 
     // return res.json({ email, password });
-    return res.status(201).json({ ok: true });
+    return res.status(201).json({ token, expiresIn});
   } catch (error) {
     console.log(error.code);
     // Manejo de error de clave duplicada por mongoose
@@ -58,16 +60,6 @@ export const login = async (req, res) => {
 
     //Generar el JWT - JSON WEB TOKEN
     const { token, expiresIn } = generateTokens(user._id);
-    // Guardar access token como cookie
-
-    // Puedo eliminarlo lo que sigue porque quiero tener el token en memoria del cliente
-    // res.cookie("token", token, {
-    //   httpOnly: true,
-    //   secure: !(process.env.MODO === "developer"),
-    //   sameSite: "strict",
-    //   expires: new Date(Date.now() + expiresIn * 1000),
-    // });
-
     generateRefreshToken(user._id, res);
 
     return res.json({ token, expiresIn });
