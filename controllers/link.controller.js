@@ -12,18 +12,42 @@ export const getLinks = async (req, res) => {
   }
 };
 
+// Para un CRUD tradicional
+// export const getLink = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const link = await Link.findById(id);
+
+//     if (!link) return res.status(404).json({ error: "No existe la URL" });
+//     if (!link.uid.equals(req.uid))
+//       return res.status(401).json({ error: "No te perneneces ese id" });
+
+//     console.log(link);
+
+//     return res.json({ link });
+//   } catch (error) {
+//     if (error.kind === "ObjectId") {
+//       return res
+//         .status(403)
+//         .json({ errors: [{ msg: "Formato id incorrecto" }] });
+//     }
+//     return res.status(500).json({ errors: [{ msg: "Error del servidor" }] });
+//   }
+// };
+
+//Esto lo hago para las rutas redireccionadas
 export const getLink = async (req, res) => {
   try {
-    const { id } = req.params;
-    const link = await Link.findById(id);
+    const { nanoLink } = req.params;
+    const link = await Link.findOne({ nanoLink });
 
     if (!link) return res.status(404).json({ error: "No existe la URL" });
-    if (!link.uid.equals(req.uid))
-      return res.status(401).json({ error: "No te perneneces ese id" });
+    // if (!link.uid.equals(req.uid))
+    //   return res.status(401).json({ error: "No te perneneces ese id" });
 
     console.log(link);
 
-    return res.json({ link });
+    return res.json({ longLink: link.longLink });
   } catch (error) {
     if (error.kind === "ObjectId") {
       return res
@@ -66,6 +90,38 @@ export const removeLink = async (req, res) => {
     console.log(link);
 
     await link.remove();
+
+    return res.json({ link });
+  } catch (error) {
+    if (error.kind === "ObjectId") {
+      return res
+        .status(403)
+        .json({ errors: [{ msg: "Formato id incorrecto" }] });
+    }
+    return res.status(500).json({ errors: [{ msg: "Error del servidor" }] });
+  }
+};
+
+export const updateLink = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { longLink } = req.body;
+
+    if (!longLink.startsWith("http://") && !longLink.startsWith("https://")) {
+      longLink = "http://" + longLink;
+    }
+
+    const link = await Link.findById(id);
+
+    if (!link) return res.status(404).json({ error: "No existe la URL" });
+    if (!link.uid.equals(req.uid))
+      return res.status(401).json({ error: "No te perneneces ese id" });
+
+    console.log(link);
+
+    //actualizar
+    link.longLink = longLink;
+    await link.save();
 
     return res.json({ link });
   } catch (error) {

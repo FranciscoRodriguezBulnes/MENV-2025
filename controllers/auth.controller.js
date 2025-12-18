@@ -24,7 +24,7 @@ export const register = async (req, res) => {
     generateRefreshToken(user._id, res);
 
     // return res.json({ email, password });
-    return res.status(201).json({ token, expiresIn});
+    return res.status(201).json({ token, expiresIn });
   } catch (error) {
     console.log(error.code);
     // Manejo de error de clave duplicada por mongoose
@@ -39,6 +39,7 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
+  console.log("Entro aquí?")
   try {
     const { email, password } = req.body;
 
